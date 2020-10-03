@@ -1,2 +1,2 @@
-# Lab1-ArquitecturaComputadores
-Primer laboratorio de Arquitectura de Computadores
+# Laboratorios-ArquitecturaComputadores
+Conjunto de prácticas de la materia de Arquitectura de Computadores, UdeA.
