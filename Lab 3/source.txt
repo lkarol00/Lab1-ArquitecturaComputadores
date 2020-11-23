@@ -1,0 +1,7 @@
+On a simulator (SPIM, MARS, ...) the syscall instruction is one single CPU instruction which does not access any registers but the ones documented.
+
+On a real MIPS CPU the syscall instruction causes that what is called "software interrupt" on x86 CPUs. A software interrupt is a special form of a function call.
+
+However unlike the jal instruction the syscall instruction does not write the return address to the $ra register but to a special register (named EPC on MIPS R4400 CPUs), which can only be accessed using special instructions.
+
+The function which is called (the "exception handler") will of course modify registers. And if that function calls other functions it will modify the $ra register.

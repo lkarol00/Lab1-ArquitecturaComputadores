@@ -1,0 +1,12 @@
+
+Número de veces de la cadena on
+ 16
+ 
+
+Número de veces de la cadena i
+ 45
+ 
+
+Número de veces de la cadena m
+ 06
+ 
