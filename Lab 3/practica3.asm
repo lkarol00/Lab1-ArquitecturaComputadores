@@ -3,6 +3,7 @@
 	file_in:	.asciiz "source.txt"
 	file_out:	.asciiz "result.txt"
 	msg: 		.asciiz "Ingrese la cadena que desea contar: "
+	msgAdv: 	.asciiz "La cadena que ha ingresado es vacía o tiene una longitud mayor a 40. Digítela nuevamente. "
 	sentence:	.byte 	0x0A, 0x0D, 0x0A, 0x0D
 	sentence_cont:	.asciiz "Número de veces de la cadena "
 	
@@ -48,7 +49,7 @@ WriteFile:
 	syscall			# write to file
 	
 	la $a1, cadena		# Dirección cadena
-	jal LongitudCadena	# Calcula la longitud de la cadena
+	jal LongitudCadena	# Calcula la longitud de la cadena y lo almacena en $s6
 
 	li $v0, 15		# System call for write to a file
 	move $a0, $s1		# Restore file descriptor (open for writing)
@@ -69,10 +70,14 @@ WriteFile:
 
 LongitudCadena:
 	lbu $t0, ($a1)
-	addi $s6, $s6, 1		# Aumentar auxiliar que contiene la longitud
-	addi $a1, $a1, 1		
-	bne $t0, '\n', LongitudCadena	# Cuando $t0 no sea igual a '\n' volverá a llamar a la función
-	addi $s6, $s6, 1		# La longitud debe tener un valor de más para dejar un espacio entre el número y la cadena
+	bge $s6, 41, MensajeAdvertencia		# La cadena tiene longitud > 40
+	addi $s6, $s6, 1			# Aumentar auxiliar que contiene la longitud
+	addi $a1, $a1, 1	
+		
+	bne $t0, '\n', LongitudCadena		# Cuando $t0 no sea igual a '\n' volverá a llamar a la función
+	beq $s6, 1, MensajeAdvertencia		# La cadena está vacía
+	addi $s6, $s6, 1			# Se agrega 1 para crear un espacio entre el número y la cadena cuando se imprimen
+
 	jr $ra
 	
 ## Pasar de número a Buffer	
@@ -94,13 +99,24 @@ NumeroABuffer:
 	sb $t3, 0($s3)		
 	addi $s3, $s3, -1
 
-	addi $t3, $t1, 48	# El código ascci del 0 es el 48, por lo tanto, dependiendo del número
+	beq $t6, -1, TextoVacio	# Si $t6 = -1, el archivo está vacío
+	addi $t3, $t1, 48	# El código ascii del 0 es el 48, por lo tanto, dependiendo del número
 				# se va sumando a 48 para que acceda al número en código ascii
-	sb $t3, 0($s3)		#Aquí se agrega el primer número de derecha a izquierda
+	sb $t3, 0($s3)		# Aquí se agrega el primer número de derecha a izquierda
 	addi $s3, $s3, -1   	
 
 	addi $t3, $t2, 48
-	sb $t3, 0($s3)		#Aquí se agrega el segundo número
+	sb $t3, 0($s3)		# Aquí se agrega el segundo número
+				
+	jr $ra
+	
+TextoVacio:			# Cuando el texto es vacío, devuelve un valor de -1
+	li $t3, 49		# El código ascii del 1 es 49
+	sb $t3, 0($s3)		
+	addi $s3, $s3, -1   	
+
+	li $t3, 45		# El código ascii del - es 45
+	sb $t3, 0($s3)		
 				
 	jr $ra
 	
@@ -110,6 +126,7 @@ NumeroABuffer:
 
 LoopCadena:
 	jal InputCadena
+	li $s6, 0		# Inicializar contador en 0
 	la $a0, input_buffer	# Dirección del texto
 	la $a1, cadena		# Dirección de cadena
 	
@@ -133,17 +150,28 @@ InputCadena:
 	la $a1, 40
 	syscall
 	
+	la $a1, cadena		# Dirección cadena
+	b LongitudCadena
+	
 	jr $ra
 
+MensajeAdvertencia:
+	li $v0, 4		# Imprimir mensaje de entrada
+	la $a0, msgAdv
+	syscall
+	
+	b InputCadena
+
 Inicializar:
-	li   $t0, -1		# Contador de la cadena, es -1 cuando la cadena está vacía 
+	li   $t0, -1		# Contador de la cadena del texto, es -1 cuando la cadena está vacía 
 	move $t1, $a0		# a $t1 le asigna el valor almacenado el $a0
 	move $t2, $a1		# a $t4 le asigna el valor almacenado el $a1
-	beqz $t1, Fin		# si $t1 es 0, lo que indice que la cadena está vacía, lo redirecciona al final
-	li $t0, 0		# iniciliza el Contador de cadenas en 0
+	lbu $t3, ($t1)
+	beqz $t3, Fin		# $t3 = 0 significa que la cadena está vacía entonces lo redirecciona al final
+	li $t0, 0		# iniciliza el contador de cadenas en 0
 		
 Bucle:	
-	lbu $t3, ($t1)			# almacena una letra del texp
+	lbu $t3, ($t1)			# almacena una letra del texto
 	lbu $t4, ($t2)			# almacena una letra de la cadena	
 	beqz $t3, Fin			# si la letra es 0 en la cadena, lo redirecciona al final
 	beq $t3, '\r', Avanzar		# cuando se da esta situación significa que hay un enter
@@ -160,11 +188,11 @@ IndexSubCadena:
 	addi $t1, $t1, 1	# aumenta el index en la cadena
 	addi $t2, $t2, 1	# aumenta el index en la subcadena
 	lbu $t5, ($t2)		# almacena el valor siguiente
-	beq $t5, '\n', Contador	# si la letra siguiente es igual a 0, llama a contador
+	beq $t5, '\n', Contador	# si la letra siguiente es igual a '\n'(indica el final de la cadena), llama a contador
 	b Bucle
 
 Contador:
-	addi $t0, $t0, 1	# aumenta en 1 el Contador de cadenas
+	addi $t0, $t0, 1	# aumenta en 1 el contador de cadenas
 	move $t2, $a1		# inicializa la dirección de la subcadena
 	b Bucle
 
