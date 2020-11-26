@@ -8,11 +8,11 @@
 	sentence_cont:	.asciiz "Número de veces de la cadena "
 	
 .align 2
-	input_buffer:	.space 2000
+	input_buffer:	.space 10000
 
 .text
-	addi $s5, $s5, 0	#Inicializar auxiliar para realizar LoopCadena
-	addi $s6, $s6, 0	#Inicializar auxiliar para realizar LongitudCadena
+	addi $s5, $s5, 0	# Inicializar auxiliar para realizar LoopCadena
+	addi $s6, $s6, 0	# Inicializar auxiliar para realizar LongitudCadena
 	
 # Open (for reading) a file
 	li $v0, 13		# System call for open file
@@ -34,7 +34,7 @@
 	li $v0, 14		# System call for reading from file
 	move $a0, $s0		# File descriptor
 	la $a1, input_buffer	# Address of input buffer
-	li $a2, 20000		# Maximum number of characters to read
+	li $a2, 10000		# Maximum number of characters to read
 	syscall			# Read from file
 	jal LoopCadena
 
@@ -91,7 +91,7 @@ NumeroABuffer:
 	li $t0, 10		# $t0 = 10
 	
 	divu  $t6, $t0		# Se hace la división de $t6/$t0
-	mfhi $t1		# De aquí se obtiene el divisor
+	mfhi $t1		# De aquí se obtiene el cociente
 	mflo $t2		# De aquí se obtiene el residuo
 
 	addi $s3, $s3, 2    	# Apunta al final del buffer ya que se empieza desde el final de la línea
@@ -163,19 +163,19 @@ MensajeAdvertencia:
 	b InputCadena
 
 Inicializar:
-	li   $t0, -1		# Contador de la cadena del texto, es -1 cuando la cadena está vacía 
+	li   $t0, -1		# Contador de la cadena del texto, es -1 cuando el texto está vacía 
 	move $t1, $a0		# a $t1 le asigna el valor almacenado el $a0
 	move $t2, $a1		# a $t4 le asigna el valor almacenado el $a1
 	lbu $t3, ($t1)
-	beqz $t3, Fin		# $t3 = 0 significa que la cadena está vacía entonces lo redirecciona al final
+	beqz $t3, Fin		# $t3 = 0 significa que el texto está vacío entonces lo redirecciona al final
 	li $t0, 0		# iniciliza el contador de cadenas en 0
 		
 Bucle:	
-	lbu $t3, ($t1)			# almacena una letra del texto
-	lbu $t4, ($t2)			# almacena una letra de la cadena	
-	beqz $t3, Fin			# si la letra es 0 en la cadena, lo redirecciona al final
+	lbu $t3, ($t1)			# almacena un caracter del texto
+	lbu $t4, ($t2)			# almacena un caracter de la cadena	
+	beqz $t3, Fin			# si el caracter es 0 en la cadena, lo redirecciona al final
 	beq $t3, '\r', Avanzar		# cuando se da esta situación significa que hay un enter
-	beq $t3, $t4, IndexSubCadena	# si las letras son iguales, se dirige a IndexSubCadena
+	beq $t3, $t4, IndexSubCadena	# si los caracteres son iguales, se dirige a IndexSubCadena
 	addi $t1, $t1, 1
 	move $t2, $a1
 	b Bucle
@@ -185,15 +185,15 @@ Avanzar:
 	b Bucle
 
 IndexSubCadena:	
-	addi $t1, $t1, 1	# aumenta el index en la cadena
-	addi $t2, $t2, 1	# aumenta el index en la subcadena
+	addi $t1, $t1, 1	# aumenta el index en el texto
+	addi $t2, $t2, 1	# aumenta el index en cadena
 	lbu $t5, ($t2)		# almacena el valor siguiente
-	beq $t5, '\n', Contador	# si la letra siguiente es igual a '\n'(indica el final de la cadena), llama a contador
+	beq $t5, '\n', Contador	# si el caracter siguiente es igual a '\n'(indica el final de la cadena), llama a contador
 	b Bucle
 
 Contador:
 	addi $t0, $t0, 1	# aumenta en 1 el contador de cadenas
-	move $t2, $a1		# inicializa la dirección de la subcadena
+	move $t2, $a1		# inicializa la dirección de la cadena
 	b Bucle
 
 Fin: 	move $v0, $t0
